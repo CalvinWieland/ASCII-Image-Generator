@@ -16,8 +16,8 @@ char characters[70] = "@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>
 // replace. Since chars are twice as tall as they are wide, it's best to set the height to twice the size of the width
 int boxWidth = 3;
 int boxHeight = 6;
-const char* inputFileName = "Help!.png";
-const char* outputFileName = "Help! with gaussian filter.jpg";
+const char* inputFileName = "lizard.jpg";
+const char* outputFileName = "lizard y sobel.jpg";
 
 // Grayscales the image based on image's pixel data, height, width, and channels
 void GrayScaleImage(unsigned char* data, int height, int width, int channels) {
@@ -134,11 +134,53 @@ void GaussianFilter(unsigned char* data, int height, int width, int channels) {
     }
 }
 
+// Performs the Sobel operater on the original image, data. other parameters are
+// image height, width, number of channels, and the Sobel output
+void SobelOperator(unsigned char* data, int height, int width, int channels, unsigned char* resX, unsigned char* resY) {
+    // sobel kernels
+    int sobelKernelX[3][3] = {
+        {-1,  0,  1},
+        {-2, 0, 2},
+        {-1, 0, 1}
+    };
+    int sobelKernelY[3][3] = {
+        {1,  2,  1},
+        {0, 0, 0},
+        {-1, -2, -1}
+    };
+
+    for (int row = 1; row < height - 1; row++) {
+        for (int col = 1; col < width - 1; col++) {
+            int index = (row * width + col) * channels;
+            
+            // Is the sum of the products surrounding the current pixel
+            double sobelSumX = 0;
+            double sobelSumY = 0;
+
+            // for each pixel around the current pixel, multiply it by the 
+            // corresponding kernel value and add it to sum
+            for (int i = -1; i < 2; i++) {
+                for (int j = -1; j < 2; j++) {
+                    int curindex = ((row + i) * width + (col + j)) * channels;
+
+                    sobelSumX += data[curindex] * sobelKernelX[i + 1][j + 1];
+                    sobelSumY += data[curindex] * sobelKernelY[i + 1][j + 1];
+                }
+            }
+
+            resX[index + 0] = resX[index + 1] = resX[index + 2] = sobelSumX;
+            resY[index + 0] = resY[index + 1] = resY[index + 2] = sobelSumY;
+        }
+    }
+}
+
 int main() {
     int width, height, channels;
 
     // Loads image and stores pixel info in the data char array
     unsigned char* data = stbi_load(inputFileName, &width, &height, &channels, 0);
+    unsigned char* SobelX = stbi_load(inputFileName, &width, &height, &channels, 0);
+    unsigned char* SobelY = stbi_load(inputFileName, &width, &height, &channels, 0);
     if (!data) {
         std::cerr << "Loading image failed\n";
         return 1;
@@ -160,8 +202,11 @@ int main() {
     */
 
     GaussianFilter(data, height, width, channels);
+    SobelOperator(data, height, width, channels, SobelX, SobelY);
     
-    stbi_write_jpg(outputFileName, width, height, channels, data, 100);
+    //stbi_write_jpg(outputFileName, width, height, channels, data, 100);
+    //stbi_write_jpg(outputFileName, width, height, channels, SobelX, 100);
+    stbi_write_jpg(outputFileName, width, height, channels, SobelY, 100);
 
     // Free memory allocated for data
     stbi_image_free(data);
