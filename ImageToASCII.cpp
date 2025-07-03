@@ -10,14 +10,14 @@
 #include "stb_image_write.h"
 #pragma clang diagnostic pop
 
+char characters[70] = "@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
+
 // boxHeight and boxWidth specify the number of pixels in the height and width of the box that an ASCII character will
 // replace. Since chars are twice as tall as they are wide, it's best to set the height to twice the size of the width
-#define boxWidth 3
-#define boxHeight 6
-#define inputFileName "Help!.png"
-#define outputFileName "Help!.jpg"
-
-char characters[70] = "@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
+int boxWidth = 3;
+int boxHeight = 6;
+const char* inputFileName = "Help!.png";
+const char* outputFileName = "Help! with gaussian filter.jpg";
 
 // Grayscales the image based on image's pixel data, height, width, and channels
 void GrayScaleImage(unsigned char* data, int height, int width, int channels) {
@@ -90,6 +90,50 @@ void PrintASCIIArt(char ASCIIArt[], int height, int width) {
     }
 }
 
+// Takes image pixel data, image height, image width, and number of channels
+// and performs a gaussian filter. Only works properly on gray-scaled image
+void GaussianFilter(unsigned char* data, int height, int width, int channels) {
+    // kernel and kernelSum according to wikipedia's page on Canny edge detection
+    int kernel[5][5] = {
+        {2,  4,  5,  4, 2},
+        {4, 9, 12, 9, 4},
+        {5, 12, 15, 12, 5},
+        {4, 9, 12, 9, 4},
+        {2,  4,  5,  4, 2}
+    };
+    int kernelSum = 159;
+
+    for (int row = 2; row < height - 2; row++) {
+        for (int col = 2; col < width - 2; col++) {
+            int index = (row * width + col) * channels;
+            
+            // Is the sum of the products surrounding the current pixel
+            double gaussSum = 0;
+
+            // for each pixel around the current pixel, multiply it by the 
+            // corresponding kernel value and add it to sum
+            for (int i = -2; i < 3; i++) {
+                for (int j = -2; j < 3; j++) {
+                    int curindex = ((row + i) * width + (col + j)) * channels;
+
+                    gaussSum += data[curindex] * kernel[i + 2][j + 2];
+                }
+            }
+
+            // Calculate final gaussian value
+            int gaussValue = gaussSum / 159;
+
+            /*unsigned char r = data[index + 0];
+            unsigned char g = data[index + 1];
+            unsigned char b = data[index + 2];
+
+            unsigned char gray = 0.3 * r + 0.59 * g + 0.11 * b;*/
+
+            data[index + 0] = data[index + 1] = data[index + 2] = gaussValue;
+        }
+    }
+}
+
 int main() {
     int width, height, channels;
 
@@ -105,12 +149,17 @@ int main() {
     // Grayscale each pixel of the image
     GrayScaleImage(data, height, width, channels);
 
+    /*
     // Create ASCIIArt Array
     char ASCIIArt[(height / boxHeight) * (width / boxWidth)];
 
     ImageToASCII(data, ASCIIArt, height, width, channels);
 
     PrintASCIIArt(ASCIIArt, height, width);
+
+    */
+
+    GaussianFilter(data, height, width, channels);
     
     stbi_write_jpg(outputFileName, width, height, channels, data, 100);
 
