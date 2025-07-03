@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <iostream>
 
+#include "ImageToASCII.h"
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 #define STB_IMAGE_WRITE_IMPLEMENTATION
@@ -13,24 +14,14 @@
 // replace. Since chars are twice as tall as they are wide, it's best to set the height to twice the size of the width
 #define boxWidth 3
 #define boxHeight 6
-#define inputFileName "Revolver.png"
-#define outputFileName "Revolver.jpg"
+#define inputFileName "Help!.png"
+#define outputFileName "Help!.jpg"
 
 char characters[70] = "@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>i!lI;:,\"^`'. ";
 
-int main() {
-    int width, height, channels;
-
-    // Loads image and stores pixel info in the data char array
-    unsigned char* data = stbi_load(inputFileName, &width, &height, &channels, 0);
-    if (!data) {
-        std::cerr << "Loading image failed\n";
-        return 1;
-    }
-
-    std::cout << "Image loaded: " << width << "x" << height << " with " << channels << " channels\n";
-
-    // Grayscale each pixel of the image
+// Grayscales the image based on image's pixel data, height, width, and channels
+void GrayScaleImage(unsigned char* data, int height, int width, int channels) {
+        // Grayscale each pixel of the image
     for (int row = 0; row < height; row++) {
         for (int col = 0; col < width; col++) {
             int index = (row * width + col) * channels;
@@ -44,9 +35,11 @@ int main() {
             data[index + 0] = data[index + 1] = data[index + 2] = gray;
         }
     }
+}
 
-    char ASCIIART[height / boxHeight][width / boxWidth];
-    // 
+// Takes image pixel data, a 2D array ASCIIArt, image height and width, and channel count
+// and converts the image into ASCII art
+void ConvertToSomethingIDK(unsigned char* data, char ASCIIART[], int height, int width, int channels) {
     for (int row = 0; row <= height - boxHeight; row += boxHeight) {
         for (int col = 0; col <= width - boxWidth; col += boxWidth) {
             int avg = 0;
@@ -68,7 +61,7 @@ int main() {
             //std::cout << "Character index: " << (int)(avg * (((double)68 / 255)/1.3)) << std::endl;
             //std::cout << "Character to be printed: " << characters[(int)(avg * (((double)68 / 255)/1.3))] << std::endl;
 
-            ASCIIART[row / boxHeight][col / boxWidth] = characters[(int)(avg * ((double)68 / 255))];
+            ASCIIART[(row / boxHeight) * (width / boxWidth) + col / boxWidth] = characters[(int)(avg * ((double)68 / 255))];
 
             // Make each value in the box equal to the average
             for (int i = row; i < row + boxHeight; i++) {
@@ -83,13 +76,34 @@ int main() {
             }
         }
     }
+}
+
+int main() {
+    int width, height, channels;
+
+    // Loads image and stores pixel info in the data char array
+    unsigned char* data = stbi_load(inputFileName, &width, &height, &channels, 0);
+    if (!data) {
+        std::cerr << "Loading image failed\n";
+        return 1;
+    }
+
+    std::cout << "Image loaded: " << width << "x" << height << " with " << channels << " channels\n";
+
+    // Grayscale each pixel of the image
+    GrayScaleImage(data, height, width, channels);
+
+    // Create ASCIIArt Array
+    char ASCIIART[(height / boxHeight) * (width / boxWidth)];
+
+    ConvertToSomethingIDK(data, ASCIIART, height, width, channels);
 
     // Print the ASCII art
-    for (int i = 0; i < height / boxHeight; i++) {
-        for (int j = 0; j < width / boxWidth; j++) {
-            std::cout << ASCIIART[i][j];
+    for (int i = 0; i < (height / boxHeight) * (width / boxWidth); i++) {
+        std::cout << ASCIIART[i];
+        if(i % (width / boxWidth) == 0) {
+            std::cout << std::endl;
         }
-        std::cout << std::endl;
     }
     
     stbi_write_jpg(outputFileName, width, height, channels, data, 100);
