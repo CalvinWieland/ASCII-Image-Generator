@@ -39,7 +39,7 @@ void GrayScaleImage(unsigned char* data, int height, int width, int channels) {
 
 // Takes image pixel data, a 2D array ASCIIArt, image height and width, and channel count
 // and converts the image into ASCII art
-void ConvertToSomethingIDK(unsigned char* data, char ASCIIART[], int height, int width, int channels) {
+void ImageToASCII(unsigned char* data, char ASCIIArt[], int height, int width, int channels) {
     for (int row = 0; row <= height - boxHeight; row += boxHeight) {
         for (int col = 0; col <= width - boxWidth; col += boxWidth) {
             int avg = 0;
@@ -61,7 +61,7 @@ void ConvertToSomethingIDK(unsigned char* data, char ASCIIART[], int height, int
             //std::cout << "Character index: " << (int)(avg * (((double)68 / 255)/1.3)) << std::endl;
             //std::cout << "Character to be printed: " << characters[(int)(avg * (((double)68 / 255)/1.3))] << std::endl;
 
-            ASCIIART[(row / boxHeight) * (width / boxWidth) + col / boxWidth] = characters[(int)(avg * ((double)68 / 255))];
+            ASCIIArt[(row / boxHeight) * (width / boxWidth) + col / boxWidth] = characters[(int)(avg * ((double)68 / 255))];
 
             // Make each value in the box equal to the average
             for (int i = row; i < row + boxHeight; i++) {
@@ -74,6 +74,18 @@ void ConvertToSomethingIDK(unsigned char* data, char ASCIIART[], int height, int
                     data[index + 2] = avg;
                 }
             }
+        }
+    }
+}
+
+// Takes ASCIIArt array and the height and width of the original image
+// and uses them and the boxHeight and boxWidth to print the array
+void PrintASCIIArt(char ASCIIArt[], int height, int width) {
+    // Print the ASCII art
+    for (int i = 0; i < (height / boxHeight) * (width / boxWidth); i++) {
+        std::cout << ASCIIArt[i];
+        if(i % (width / boxWidth) == 0) {
+            std::cout << std::endl;
         }
     }
 }
@@ -94,17 +106,11 @@ int main() {
     GrayScaleImage(data, height, width, channels);
 
     // Create ASCIIArt Array
-    char ASCIIART[(height / boxHeight) * (width / boxWidth)];
+    char ASCIIArt[(height / boxHeight) * (width / boxWidth)];
 
-    ConvertToSomethingIDK(data, ASCIIART, height, width, channels);
+    ImageToASCII(data, ASCIIArt, height, width, channels);
 
-    // Print the ASCII art
-    for (int i = 0; i < (height / boxHeight) * (width / boxWidth); i++) {
-        std::cout << ASCIIART[i];
-        if(i % (width / boxWidth) == 0) {
-            std::cout << std::endl;
-        }
-    }
+    PrintASCIIArt(ASCIIArt, height, width);
     
     stbi_write_jpg(outputFileName, width, height, channels, data, 100);
 
