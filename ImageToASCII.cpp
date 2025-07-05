@@ -19,11 +19,12 @@ char characters[70] = "@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>
 // replace. Since chars are twice as tall as they are wide, it's best to set the height to twice the size of the width
 int boxWidth = 3;
 int boxHeight = 6;
-const char* inputFileName = "lizard.jpg";
+const char* inputFileName = "lizardsmaller.jpg";
 const char* outputFileName = "lizard gaussian.jpg";
 const char* outputFileName1 = "lizard sobel X.jpg";
 const char* outputFileName2 = "lizard sobel Y.jpg";
 const char* outputFileName3 = "lizard gradient G.jpg";
+const char* outputFileName4 = "lizard NMS.jpg";
 
 // Grayscales the image based on image's pixel data, height, width, and channels
 void GrayScaleImage(unsigned char* data, int height, int width, int channels) {
@@ -214,6 +215,57 @@ void GetGradientAndAngleInfo(int* gradX, int* gradY, int width, int height, int 
     std::cout << "Number of 0s: " << num0 << " Nummber of 45s: " << num45 << " Number of 90s: " << num90 << " Number of 135s: " << num135 << std::endl;
 }
 
+// Takes gradient of image G and angular information and applies non-maximum suppression on G
+void NonMaximumSupression(unsigned char* G, unsigned char* NMS, int height, int width, int channels, int* angleInfo) {
+    for (int row = 1; row < height - 1; row++) {
+        for (int col = 1; col < width - 1; col++) {
+            int gradientIndex = (row * width + col) * channels;
+            int angleInfoIndex = row * width + col;
+
+            if (angleInfo[angleInfoIndex] == 0) {
+                int neighbor1 = (row * width + (col + 1)) * channels;
+                int neighbor2 = (row * width + (col - 1)) * channels;
+
+                if (G[gradientIndex] > G[neighbor1] && G[gradientIndex] > G[neighbor2]) {
+                    NMS[gradientIndex + 0] = G[gradientIndex + 0];
+                    NMS[gradientIndex + 1] = G[gradientIndex + 1];
+                    NMS[gradientIndex + 2] = G[gradientIndex + 2];
+                }
+            }
+            else if (angleInfo[angleInfoIndex] == 45) {
+                int neighbor1 = ((row - 1) * width + (col + 1)) * channels;
+                int neighbor2 = ((row + 1) * width + (col - 1)) * channels;
+
+                if (G[gradientIndex] > G[neighbor1] && G[gradientIndex] > G[neighbor2]) {
+                    NMS[gradientIndex + 0] = G[gradientIndex + 0];
+                    NMS[gradientIndex + 1] = G[gradientIndex + 1];
+                    NMS[gradientIndex + 2] = G[gradientIndex + 2];
+                }
+            }
+            else if (angleInfo[angleInfoIndex] == 90) {
+                int neighbor1 = ((row + 1) * width) * channels;
+                int neighbor2 = ((row - 1) * width) * channels;
+
+                if (G[gradientIndex] > G[neighbor1] && G[gradientIndex] > G[neighbor2]) {
+                    NMS[gradientIndex + 0] = G[gradientIndex + 0];
+                    NMS[gradientIndex + 1] = G[gradientIndex + 1];
+                    NMS[gradientIndex + 2] = G[gradientIndex + 2];
+                }
+            }
+            else {
+                int neighbor1 = ((row + 1) * width + (col + 1)) * channels;
+                int neighbor2 = ((row - 1) * width + (col - 1)) * channels;
+
+                if (G[gradientIndex] > G[neighbor1] && G[gradientIndex] > G[neighbor2]) {
+                    NMS[gradientIndex + 0] = G[gradientIndex + 0];
+                    NMS[gradientIndex + 1] = G[gradientIndex + 1];
+                    NMS[gradientIndex + 2] = G[gradientIndex + 2];
+                }
+            }
+        }
+    }
+}
+
 int main() {
     int width, height, channels;
 
@@ -231,22 +283,26 @@ int main() {
 
     // For each pixel, create a char to represent its gradient value and the angle
     int* angleInfo = (int*)malloc(sizeof(int) * (height * width));
-    unsigned char* G = (unsigned char*)malloc(sizeof(double) * width * height * channels);
+    unsigned char* G = (unsigned char*)malloc(width * height * channels);
+    unsigned char* NMS = (unsigned char*)malloc(width * height * channels);
 
     std::cout << "Image loaded: " << width << "x" << height << " with " << channels << " channels\n";
 
     // Grayscale each pixel of the image
     GrayScaleImage(data, height, width, channels);
 
-    //GaussianFilter(data, height, width, channels);
+    GaussianFilter(data, height, width, channels);
     SobelOperator(data, height, width, channels, SobelX, SobelY);
 
     GetGradientAndAngleInfo(SobelX, SobelY, width, height, channels, G, angleInfo);
+
+    NonMaximumSupression(G, NMS, height, width, channels, angleInfo);
     
     stbi_write_jpg(outputFileName, width, height, channels, data, 100);
     stbi_write_jpg(outputFileName1, width, height, channels, SobelX, 100);
     stbi_write_jpg(outputFileName2, width, height, channels, SobelY, 100);
     stbi_write_jpg(outputFileName3, width, height, channels, G, 100);
+    stbi_write_jpg(outputFileName4, width, height, channels, NMS, 100);
 
     // Free memory allocated for data
     stbi_image_free(data);
