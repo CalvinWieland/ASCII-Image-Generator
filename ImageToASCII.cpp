@@ -20,7 +20,10 @@ char characters[70] = "@B%8&WM#*oahkbdpqwmZO0QLCJUYXzcvunxrjft/\\|()1{}[]?-_+~<>
 int boxWidth = 3;
 int boxHeight = 6;
 const char* inputFileName = "lizard.jpg";
-const char* outputFileName = "lizard gaussian 2.jpg";
+const char* outputFileName = "lizard gaussian.jpg";
+const char* outputFileName1 = "lizard sobel X.jpg";
+const char* outputFileName2 = "lizard sobel Y.jpg";
+const char* outputFileName3 = "lizard gradient G.jpg";
 
 // Grayscales the image based on image's pixel data, height, width, and channels
 void GrayScaleImage(unsigned char* data, int height, int width, int channels) {
@@ -240,10 +243,10 @@ int main() {
 
     GetGradientAndAngleInfo(SobelX, SobelY, width, height, channels, G, angleInfo);
     
-    //stbi_write_jpg(outputFileName, width, height, channels, data, 100);
-    //stbi_write_jpg(outputFileName, width, height, channels, SobelX, 100);
-    //stbi_write_jpg(outputFileName, width, height, channels, SobelY, 100);
-    stbi_write_jpg(outputFileName, width, height, channels, G, 100);
+    stbi_write_jpg(outputFileName, width, height, channels, data, 100);
+    stbi_write_jpg(outputFileName1, width, height, channels, SobelX, 100);
+    stbi_write_jpg(outputFileName2, width, height, channels, SobelY, 100);
+    stbi_write_jpg(outputFileName3, width, height, channels, G, 100);
 
     // Free memory allocated for data
     stbi_image_free(data);
