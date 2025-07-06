@@ -269,7 +269,7 @@ void NonMaximumSupression(unsigned char* G, unsigned char* NMS, int height, int 
 
 // Takes a black/white photo and its dimensions, compares each pixel (not on border) value to min/max.
 // if the value is between min and max, it must check surrounding pixels and see if it's connected to a > max pixel
-void DoubleThreshold(unsigned char* original, unsigned char* result, double min, double max, int height, int width, int channels) {
+void DoubleThresholdAndHysteresis(unsigned char* original, unsigned char* result, double min, double max, int height, int width, int channels) {
     // check each non-edge pixel
     for (int row = 1; row < height - 1; row++) {
         for (int col = 1; col < width - 1; col++) {
@@ -290,16 +290,16 @@ void DoubleThreshold(unsigned char* original, unsigned char* result, double min,
 
                 // if a >max value was found, write the pixel to result
                 if (maxFound == 1) {
-                    result[index + 0] = original[index + 0];
-                    result[index + 1] = original[index + 1];
-                    result[index + 2] = original[index + 2];
+                    result[index + 0] = 255;
+                    result[index + 1] = 255;
+                    result[index + 2] = 255;
                 }
             }
             // if the pixel value is larger than max, write it to the result
             else if (original[index] >= (int)(max * 255)) {
-                result[index + 0] = original[index + 0];
-                result[index + 1] = original[index + 1];
-                result[index + 2] = original[index + 2];
+                result[index + 0] = 255;
+                result[index + 1] = 255;
+                result[index + 2] = 255;
             }
         }
     }
@@ -339,8 +339,8 @@ int main() {
     NonMaximumSupression(G, NMS, height, width, channels, angleInfo);
 
     // set doubleThreshold values
-    double min = .3, max = .5;
-    DoubleThreshold(NMS, doubleThreshold, min, max, height, width, channels);
+    double min = .5, max = .8;
+    DoubleThresholdAndHysteresis(NMS, doubleThreshold, min, max, height, width, channels);
     
     stbi_write_jpg(outputFileName, width, height, channels, data, 100);
     stbi_write_jpg(outputFileName1, width, height, channels, SobelX, 100);
