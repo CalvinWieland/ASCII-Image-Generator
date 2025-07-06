@@ -25,6 +25,7 @@ const char* outputFileName1 = "lizard sobel X.jpg";
 const char* outputFileName2 = "lizard sobel Y.jpg";
 const char* outputFileName3 = "lizard gradient G.jpg";
 const char* outputFileName4 = "lizard NMS.jpg";
+const char* outputFileName5 = "lizard double threshold.jpg";
 
 // Grayscales the image based on image's pixel data, height, width, and channels
 void GrayScaleImage(unsigned char* data, int height, int width, int channels) {
@@ -266,6 +267,44 @@ void NonMaximumSupression(unsigned char* G, unsigned char* NMS, int height, int 
     }
 }
 
+// Takes a black/white photo and its dimensions, compares each pixel (not on border) value to min/max.
+// if the value is between min and max, it must check surrounding pixels and see if it's connected to a > max pixel
+void DoubleThreshold(unsigned char* original, unsigned char* result, double min, double max, int height, int width, int channels) {
+    // check each non-edge pixel
+    for (int row = 1; row < height - 1; row++) {
+        for (int col = 1; col < width - 1; col++) {
+            int index = (row * width + col) * channels;
+
+            // if the pixel value is >= min but < max, only keep if a >max pixel is in its surrounding
+            if (original[index] >= (int)(min * 255) && original[index] < (int)(max * 255)) {
+                int maxFound = 0;
+                for (int i = -1; i < 2; i++) {
+                    for (int j = -1; j < 2; j++) {
+                        int surroundIndex = ((row + i) * width + (col + j)) * channels;
+
+                        if (original[surroundIndex] >= max) {
+                            maxFound = 1;
+                        }
+                    }
+                }
+
+                // if a >max value was found, write the pixel to result
+                if (maxFound == 1) {
+                    result[index + 0] = original[index + 0];
+                    result[index + 1] = original[index + 1];
+                    result[index + 2] = original[index + 2];
+                }
+            }
+            // if the pixel value is larger than max, write it to the result
+            else if (original[index] >= (int)(max * 255)) {
+                result[index + 0] = original[index + 0];
+                result[index + 1] = original[index + 1];
+                result[index + 2] = original[index + 2];
+            }
+        }
+    }
+}
+
 int main() {
     int width, height, channels;
 
@@ -285,6 +324,7 @@ int main() {
     int* angleInfo = (int*)malloc(sizeof(int) * (height * width));
     unsigned char* G = (unsigned char*)malloc(width * height * channels);
     unsigned char* NMS = (unsigned char*)malloc(width * height * channels);
+    unsigned char* doubleThreshold = (unsigned char*)malloc(width * height * channels);
 
     std::cout << "Image loaded: " << width << "x" << height << " with " << channels << " channels\n";
 
@@ -297,12 +337,17 @@ int main() {
     GetGradientAndAngleInfo(SobelX, SobelY, width, height, channels, G, angleInfo);
 
     NonMaximumSupression(G, NMS, height, width, channels, angleInfo);
+
+    // set doubleThreshold values
+    double min = .3, max = .5;
+    DoubleThreshold(NMS, doubleThreshold, min, max, height, width, channels);
     
     stbi_write_jpg(outputFileName, width, height, channels, data, 100);
     stbi_write_jpg(outputFileName1, width, height, channels, SobelX, 100);
     stbi_write_jpg(outputFileName2, width, height, channels, SobelY, 100);
     stbi_write_jpg(outputFileName3, width, height, channels, G, 100);
     stbi_write_jpg(outputFileName4, width, height, channels, NMS, 100);
+    stbi_write_jpg(outputFileName5, width, height, channels, doubleThreshold, 100);
 
     // Free memory allocated for data
     stbi_image_free(data);
