@@ -1,4 +1,6 @@
+#include <cstdio>
 #include <cstdlib>
+#include <cstring>
 #include <stdio.h>
 #include <iostream>
 #include <stdlib.h>
@@ -350,8 +352,8 @@ char* ImageToASCII(const char* inputFileName, int boxHeight, int boxWidth, doubl
     NonMaximumSupression(G, NMS, height, width, channels, angleInfo);
 
     // set doubleThreshold values
-    double min = .3, max = .5;
-    DoubleThresholdAndHysteresis(NMS, doubleThreshold, min, max, height, width, channels);
+    //double min = .65, max = .85;
+    DoubleThresholdAndHysteresis(NMS, doubleThreshold, doubleThresholdMin, doubleThresholdMax, height, width, channels);
 
     PixelDataToASCII(doubleThreshold, ASCIIArt, height, width, channels, boxHeight, boxWidth);
 
@@ -373,9 +375,8 @@ char* ImageToASCII(const char* inputFileName, int boxHeight, int boxWidth, doubl
     free(NMS);
     free(doubleThreshold);
 
-    return NULL;
+    return ASCIIArt;
 }
-
 
 int main(int argc, char *argv[]) {
     if (argc < 6) {
@@ -396,9 +397,6 @@ int main(int argc, char *argv[]) {
     int boxWidth = atoi(argv[3]);
     double low = strtod(argv[4], NULL);
     double high = strtod(argv[5], NULL);
-
-    //boxHeight = 6, boxWidth = 3;
-    //low = .3, high = .5;
 
     ImageToASCII(inputFileName, boxHeight, boxWidth, low, high);
 
